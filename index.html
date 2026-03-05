@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Ragdoll Archery</title>
+
+<style>
+body{
+margin:0;
+background:#87CEEB;
+overflow:hidden;
+font-family:sans-serif;
+}
+
+canvas{
+display:block;
+}
+
+#ui{
+position:absolute;
+top:10px;
+left:10px;
+color:white;
+font-size:20px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="ui">
+Player ❤️ <span id="phealth">100</span><br>
+Enemy ❤️ <span id="ehealth">100</span>
+</div>
+
+<canvas id="game"></canvas>
+
+<script>
+
+const canvas = document.getElementById("game")
+const ctx = canvas.getContext("2d")
+
+canvas.width = window.innerWidth
+canvas.height = window.innerHeight
+
+let gravity = 0.3
+
+class Arrow{
+constructor(x,y,vx,vy){
+this.x=x
+this.y=y
+this.vx=vx
+this.vy=vy
+}
+
+update(){
+this.vy+=gravity
+this.x+=this.vx
+this.y+=this.vy
+}
+
+draw(){
+ctx.beginPath()
+ctx.moveTo(this.x,this.y)
+ctx.lineTo(this.x-this.vx*2,this.y-this.vy*2)
+ctx.strokeStyle="brown"
+ctx.lineWidth=4
+ctx.stroke()
+}
+}
+
+let arrows=[]
+
+let player={
+x:150,
+y:canvas.height-200,
+health:100
+}
+
+let enemy={
+x:canvas.width-150,
+y:canvas.height-200,
+health:100
+}
+
+let mouse={
+x:0,
+y:0,
+down:false
+}
+
+canvas.addEventListener("mousedown",e=>{
+mouse.down=true
+mouse.x=e.clientX
+mouse.y=e.clientY
+})
+
+canvas.addEventListener("mouseup",e=>{
+
+let dx = mouse.x-player.x
+let dy = mouse.y-player.y
+
+let power=0.15
+
+arrows.push(new Arrow(player.x,player.y,dx*power,dy*power))
+
+mouse.down=false
+})
+
+canvas.addEventListener("mousemove",e=>{
+mouse.x=e.clientX
+mouse.y=e.clientY
+})
+
+function drawStickman(x,y,color){
+
+ctx.strokeStyle=color
+ctx.lineWidth=6
+
+// body
+ctx.beginPath()
+ctx.moveTo(x,y)
+ctx.lineTo(x,y+50)
+ctx.stroke()
+
+// head
+ctx.beginPath()
+ctx.arc(x,y-15,12,0,Math.PI*2)
+ctx.stroke()
+
+// arms
+ctx.beginPath()
+ctx.moveTo(x,y+10)
+ctx.lineTo(x-20,y+30)
+ctx.moveTo(x,y+10)
+ctx.lineTo(x+20,y+30)
+ctx.stroke()
+
+// legs
+ctx.beginPath()
+ctx.moveTo(x,y+50)
+ctx.lineTo(x-20,y+80)
+ctx.moveTo(x,y+50)
+ctx.lineTo(x+20,y+80)
+ctx.stroke()
+}
+
+function enemyShoot(){
+
+let dx = player.x-enemy.x
+let dy = player.y-enemy.y
+
+let power=0.12
+
+arrows.push(new Arrow(enemy.x,enemy.y,dx*power,dy*power))
+
+}
+
+setInterval(enemyShoot,2000)
+
+function update(){
+
+ctx.clearRect(0,0,canvas.width,canvas.height)
+
+drawStickman(player.x,player.y,"blue")
+drawStickman(enemy.x,enemy.y,"red")
+
+for(let a of arrows){
+
+a.update()
+a.draw()
+
+// hit enemy
+if(Math.abs(a.x-enemy.x)<20 && Math.abs(a.y-enemy.y)<40){
+enemy.health-=10
+a.y=9999
+}
+
+// hit player
+if(Math.abs(a.x-player.x)<20 && Math.abs(a.y-player.y)<40){
+player.health-=10
+a.y=9999
+}
+
+}
+
+document.getElementById("phealth").innerText=player.health
+document.getElementById("ehealth").innerText=enemy.health
+
+if(player.health<=0){
+alert("Enemy Wins")
+location.reload()
+}
+
+if(enemy.health<=0){
+alert("You Win")
+location.reload()
+}
+
+requestAnimationFrame(update)
+
+}
+
+update()
+
+</script>
+
+</body>
+</html>
