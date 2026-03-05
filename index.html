@@ -23,6 +23,7 @@ position:absolute;
 top:10px;
 left:10px;
 color:white;
+font-size:18px;
 }
 
 .bar{
@@ -44,7 +45,8 @@ background:red;
 
 <div id="ui">
 
-LEVEL: <span id="level">1</span><br><br>
+LEVEL: <span id="level">1</span><br>
+LIVES: <span id="lives">3</span><br><br>
 
 PLAYER
 <div class="bar"><div id="php" class="hp"></div></div>
@@ -70,6 +72,7 @@ window.addEventListener("resize",resize)
 let gravity=0.4
 let arrows=[]
 let level=1
+let lives=3
 
 class Arrow{
 
@@ -112,7 +115,7 @@ constructor(x,color){
 this.x=x
 this.y=0
 this.color=color
-this.health=100
+this.health=200
 this.alive=true
 
 }
@@ -131,18 +134,15 @@ let y=this.y
 ctx.strokeStyle=this.color
 ctx.lineWidth=6
 
-// head
 ctx.beginPath()
 ctx.arc(x,y-20,12,0,Math.PI*2)
 ctx.stroke()
 
-// body
 ctx.beginPath()
 ctx.moveTo(x,y)
 ctx.lineTo(x,y+60)
 ctx.stroke()
 
-// arms
 ctx.beginPath()
 ctx.moveTo(x,y+10)
 ctx.lineTo(x-30,y+30)
@@ -150,7 +150,6 @@ ctx.moveTo(x,y+10)
 ctx.lineTo(x+30,y+30)
 ctx.stroke()
 
-// legs
 ctx.beginPath()
 ctx.moveTo(x,y+60)
 ctx.lineTo(x-25,y+100)
@@ -258,11 +257,10 @@ for(let e of enemies){
 enemyShoot(e)
 }
 
-},3000)
+},3200)
 
 function hitCheck(a){
 
-// enemies hit
 if(a.owner==="player"){
 
 for(let e of enemies){
@@ -270,17 +268,13 @@ for(let e of enemies){
 if(!e.alive) continue
 
 if(Math.abs(a.x-e.x)<12 && Math.abs(a.y-(e.y-20))<12){
-
-e.health-=30
+e.health-=35
 a.stuck=true
-
 }
 
 else if(Math.abs(a.x-e.x)<25 && Math.abs(a.y-e.y)<60){
-
-e.health-=12
+e.health-=15
 a.stuck=true
-
 }
 
 if(e.health<=0){
@@ -291,21 +285,16 @@ e.alive=false
 
 }
 
-// player hit
 if(a.owner==="enemy"){
 
 if(Math.abs(a.x-player.x)<12 && Math.abs(a.y-(player.y-20))<12){
-
-player.health-=20
+player.health-=10
 a.stuck=true
-
 }
 
 else if(Math.abs(a.x-player.x)<25 && Math.abs(a.y-player.y)<60){
-
-player.health-=8
+player.health-=4
 a.stuck=true
-
 }
 
 }
@@ -315,7 +304,7 @@ a.stuck=true
 function nextLevel(){
 
 level++
-player.health=300
+player.health=200
 arrows=[]
 
 spawnEnemies()
@@ -332,10 +321,8 @@ player.update()
 player.draw()
 
 for(let e of enemies){
-
 e.update()
 e.draw()
-
 }
 
 if(aiming){
@@ -360,7 +347,7 @@ hitCheck(a)
 let alive=enemies.filter(e=>e.alive).length
 
 document.getElementById("enemycount").innerText=alive
-document.getElementById("php").style.width=player.health+"%"
+document.getElementById("php").style.width=(player.health/2)+"%"
 
 if(alive===0){
 setTimeout(nextLevel,800)
@@ -368,8 +355,20 @@ setTimeout(nextLevel,800)
 
 if(player.health<=0){
 
+lives--
+document.getElementById("lives").innerText=lives
+
+if(lives>0){
+
+player.health=200
+arrows=[]
+
+}else{
+
 alert("Game Over! Level reached: "+level)
 location.reload()
+
+}
 
 }
 
