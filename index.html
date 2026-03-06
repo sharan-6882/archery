@@ -31,7 +31,8 @@ display:block;
 <div id="ui">
 ❤️ Lives: <span id="lives">5</span><br>
 🎯 Level: <span id="level">1</span><br>
-🏆 Score: <span id="score">0</span>
+🏆 Score: <span id="score">0</span><br>
+🎯 AutoAim: <span id="auto">3</span>
 </div>
 
 <canvas id="game"></canvas>
@@ -52,6 +53,7 @@ let particles=[]
 let level=1
 let score=0
 let lives=5
+let autoAim=3
 
 let aimX=0
 let aimY=0
@@ -61,11 +63,13 @@ let charging=false
 class Fighter{
 
 constructor(x,y,enemy=false){
+
 this.x=x
 this.y=y
 this.enemy=enemy
 this.hp=100
-this.cool=120
+this.cool=220
+
 }
 
 draw(){
@@ -114,7 +118,7 @@ if(this.cool<=0){
 
 shootEnemy(this)
 
-this.cool=120+Math.random()*80
+this.cool=220+Math.random()*150
 
 }
 
@@ -125,12 +129,14 @@ this.cool=120+Math.random()*80
 class Arrow{
 
 constructor(x,y,vx,vy,enemy=false){
+
 this.x=x
 this.y=y
 this.vx=vx
 this.vy=vy
 this.enemy=enemy
 this.explode=Math.random()<0.15
+
 }
 
 update(){
@@ -150,6 +156,7 @@ damagePlayer()
 if(this.explode) explode(this.x,this.y)
 
 return true
+
 }
 
 }else{
@@ -165,6 +172,7 @@ blood(this.x,this.y)
 killEnemy(e)
 
 return true
+
 }
 
 let body=Math.hypot(e.x-this.x,e.y-this.y)
@@ -176,6 +184,7 @@ blood(this.x,this.y)
 killEnemy(e)
 
 return true
+
 }
 
 }
@@ -187,6 +196,7 @@ if(this.y>canvas.height){
 if(this.explode) explode(this.x,this.y)
 
 return true
+
 }
 
 return false
@@ -215,10 +225,39 @@ let dist=Math.sqrt(dx*dx+dy*dy)
 
 let speed=11
 
-let vx=dx/dist*speed
-let vy=dy/dist*speed - dist*0.01
+let accuracy = 0.15 - level*0.01
+if(accuracy<0.02) accuracy=0.02
+
+let vx=dx/dist*speed+(Math.random()-0.5)*accuracy
+let vy=dy/dist*speed - dist*0.01+(Math.random()-0.5)*accuracy
 
 arrows.push(new Arrow(e.x,e.y-20,vx,vy,true))
+
+}
+
+function shootPlayer(){
+
+let angle
+
+if(autoAim>0 && enemies.length>0){
+
+let target=enemies[0]
+
+angle=Math.atan2(target.y-player.y,target.x-player.x)
+
+autoAim--
+document.getElementById("auto").innerText=autoAim
+
+}else{
+
+angle=Math.atan2(aimY-player.y,aimX-player.x)
+
+}
+
+let vx=Math.cos(angle)*power
+let vy=Math.sin(angle)*power
+
+arrows.push(new Arrow(player.x,player.y-20,vx,vy,false))
 
 }
 
@@ -316,13 +355,7 @@ power=0
 canvas.onmouseup=()=>{
 
 charging=false
-
-let angle=Math.atan2(aimY-player.y,aimX-player.x)
-
-let vx=Math.cos(angle)*power
-let vy=Math.sin(angle)*power
-
-arrows.push(new Arrow(player.x,player.y-20,vx,vy,false))
+shootPlayer()
 
 }
 
@@ -333,27 +366,32 @@ aimY=e.clientY
 
 }
 
-canvas.ontouchstart=e=>{
+function drawPrediction(){
 
-charging=true
-power=0
-
-}
-
-canvas.ontouchend=e=>{
-
-charging=false
+if(!charging) return
 
 let angle=Math.atan2(aimY-player.y,aimX-player.x)
 
-arrows.push(new Arrow(player.x,player.y-20,Math.cos(angle)*power,Math.sin(angle)*power,false))
+let vx=Math.cos(angle)*power
+let vy=Math.sin(angle)*power
+
+let px=player.x
+let py=player.y-20
+
+ctx.strokeStyle="rgba(255,255,255,0.3)"
+ctx.beginPath()
+
+for(let i=0;i<60;i++){
+
+px+=vx
+py+=vy
+vy+=gravity
+
+ctx.lineTo(px,py)
 
 }
 
-canvas.ontouchmove=e=>{
-
-aimX=e.touches[0].clientX
-aimY=e.touches[0].clientY
+ctx.stroke()
 
 }
 
@@ -361,8 +399,8 @@ function update(){
 
 if(charging){
 
-power+=0.25
-if(power>18) power=18
+power+=0.35
+if(power>25) power=25
 
 }
 
@@ -406,6 +444,18 @@ for(let p of particles){
 
 ctx.fillStyle="red"
 ctx.fillRect(p.x,p.y,3,3)
+
+}
+
+drawPrediction()
+
+if(charging){
+
+ctx.strokeStyle="white"
+ctx.beginPath()
+ctx.moveTo(player.x,player.y-20)
+ctx.lineTo(aimX,aimY)
+ctx.stroke()
 
 }
 
